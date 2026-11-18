@@ -48,6 +48,27 @@ def build_openssl(work: Path) -> Path:
     return prefix
 
 
+def prepare_crypto_codegen(source: Path, work: Path, cffi_version: str) -> Path:
+    """Use host CFFI only to emit C; keep target header and ABI queries intact."""
+    host = work / "host-codegen"
+    subprocess.run([sys.executable, "-m", "venv", str(host)], check=True)
+    python = host / "bin/python"
+    subprocess.run([str(python), "-m", "pip", "install", "--only-binary=:all:",
+                    f"cffi=={cffi_version}"], check=True)
+    subprocess.run([str(python), "-c", "from cffi import FFI; FFI()"], check=True)
+    script = source / "src/rust/cryptography-cffi/build.rs"
+    text = script.read_text()
+    original = "let output = Command::new(&python)"
+    if text.count(original) != 1:
+        raise ValueError("cryptography codegen hook changed; review upstream build.rs")
+    # Only the build_openssl.py invocation uses host Python. Later include-dir
+    # queries must continue using the cross interpreter configured by maturin.
+    script.write_text(text.replace(original, (
+        'let output = Command::new(env::var("CODING2API_CODEGEN_PYTHON")'
+        '.expect("host codegen Python is required"))')))
+    return python
+
+
 def main():
     if sys.platform != "darwin":
         raise SystemExit("Full macOS/Xcode required")
@@ -75,10 +96,14 @@ def main():
                        CIBW_XBUILD_TOOLS_IOS="cargo rustc rustup",
                        IPHONEOS_DEPLOYMENT_TARGET="16.0")
             if name == "cryptography":
+                cffi = next(p for p in packages if p["name"] == "cffi")
+                codegen = prepare_crypto_codegen(roots[0], work, cffi["version"])
                 openssl = build_openssl(work)
-                env.update(OPENSSL_DIR=str(openssl), OPENSSL_STATIC="1",
+                env.update(CODING2API_CODEGEN_PYTHON=str(codegen),
+                           OPENSSL_DIR=str(openssl), OPENSSL_STATIC="1",
                            OPENSSL_NO_VENDOR="1",
                            CIBW_ENVIRONMENT_IOS=(
+                               f'CODING2API_CODEGEN_PYTHON="{codegen}" '
                                f'OPENSSL_DIR="{openssl}" OPENSSL_STATIC=1 '
                                'OPENSSL_NO_VENDOR=1 IPHONEOS_DEPLOYMENT_TARGET=16.0'))
             # Missing PyO3/target support must fail, never omit the extension.

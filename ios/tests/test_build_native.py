@@ -54,3 +54,32 @@ def test_openssl_uses_device_target_and_static_libraries(tmp_path, monkeypatch):
         ["xcrun", "lipo", str(prefix / "lib" / name), "-verify_arch", "arm64"]
         for name in ("libssl.a", "libcrypto.a")
     ]
+
+
+def test_crypto_codegen_uses_host_cffi_without_changing_target_queries(tmp_path, monkeypatch):
+    script = tmp_path / "src/rust/cryptography-cffi/build.rs"
+    script.parent.mkdir(parents=True)
+    script.write_text('let output = Command::new(&python)\n'
+                      'let includes = run_python_script(&python, "target headers");\n')
+    calls = []
+    monkeypatch.setattr(native.subprocess, "run", lambda args, **kw: calls.append((args, kw)))
+    python = native.prepare_crypto_codegen(tmp_path, tmp_path, "2.1.1")
+    assert python == tmp_path / "host-codegen/bin/python"
+    assert calls[1][0] == [str(python), "-m", "pip", "install",
+                           "--only-binary=:all:", "cffi==2.1.1"]
+    assert calls[2][0] == [str(python), "-c", "from cffi import FFI; FFI()"]
+    assert all(options["check"] for _, options in calls)
+    patched = script.read_text()
+    assert 'Command::new(env::var("CODING2API_CODEGEN_PYTHON")' in patched
+    assert 'run_python_script(&python, "target headers")' in patched
+
+
+@pytest.mark.parametrize("text", ["upstream changed", "let output = Command::new(&python)" * 2])
+def test_crypto_codegen_rejects_unexpected_upstream(tmp_path, monkeypatch, text):
+    script = tmp_path / "src/rust/cryptography-cffi/build.rs"
+    script.parent.mkdir(parents=True)
+    script.write_text(text)
+    monkeypatch.setattr(native.subprocess, "run", lambda *a, **kw: None)
+    with pytest.raises(ValueError, match="codegen hook changed"):
+        native.prepare_crypto_codegen(tmp_path, tmp_path, "2.1.1")
+    assert script.read_text() == text

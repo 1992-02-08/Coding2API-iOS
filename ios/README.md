@@ -21,7 +21,7 @@ WebView 上方有返回模式按钮。内嵌服务已经启动后，切换常驻
 
 1. `uv sync --frozen`、原版 ruff 与 100% 行/分支覆盖率门槛，以及 `uv run pytest -q ios/tests`。
 2. 原版前端 tsc、vitest、完整构建。
-3. 可选（默认开启）`build_native.py`：从 uv.lock 获取两个原生扩展的源码与 SHA256，尝试 cibuildwheel 3.4.0 真机交叉编译。此步骤是待执行的试验配方，尚不能保证通过，尤其 OpenSSL/PyO3 构建条件。
+3. 可选（默认开启）`build_native.py`：从 uv.lock 获取两个原生扩展的源码与 SHA256，尝试 cibuildwheel 3.4.0 真机交叉编译。OpenSSL 静态库编译已在云端通过；cryptography 的 CFFI 代码生成改用独立 macOS 虚拟环境（cffi 版本取自 uv.lock），仅替换其生成 C 文件的解释器，目标头文件查询和 iPhoneOS 编译仍使用交叉环境。上游构建脚本不匹配时直接失败。此修复及完整打包仍待云端验证。
 4. `resolve_wheels.py` 从 uv.lock 导出后端固定版本，追加 Toga 0.5.7，下载 CPython 3.13/iPhoneOS arm64 或纯 Python wheels；可搜索 `ios/native-wheels/` 的自编译产物。缺失兼容 wheel 直接失败，禁止拿桌面或模拟器产物改名。
 5. `prepare.py` 检查完整 wheel 清单与哈希，以 `--no-index --only-binary` 离线安装依赖并生成完整工程。
 6. `build-ipa.sh` 以 generic iOS device、arm64、最低 iOS 16.0 归档；检查打包的后端、前端与宿主，生成 `Coding2API-unsigned.ipa`。归档或内容检查失败不交付假成功产物。
