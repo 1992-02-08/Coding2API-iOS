@@ -37,7 +37,7 @@ jobs:
           logs = list(Path('previous-diagnostics').rglob('native-build.log'))
           if len(logs) != 1:
               raise SystemExit('Expected one previous native log')
-          text = logs[0].read_text(errors='replace')[-16000:]
+          text = logs[0].read_text(errors='replace')[-3500:]
           with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
               summary.write('## Previous native build failure\n```text\n' + text + '\n```\n')
           escaped = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
