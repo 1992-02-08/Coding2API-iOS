@@ -22,7 +22,8 @@ def test_framework_config_uses_target_slice(tmp_path, monkeypatch):
     framework = tmp_path / "Python.xcframework/ios-arm64/Python.framework"
     framework.mkdir(parents=True)
     (framework / "Python").touch()
-    monkeypatch.setattr(config.sysconfig, "get_config_var", lambda key: str(framework.parent))
+    monkeypatch.setattr(config.sysconfig, "get_config_var", lambda key: (
+        ".cpython-313-arm64-iphoneos.so" if key == "EXT_SUFFIX" else str(framework.parent)))
     monkeypatch.setattr(config.sysconfig, "get_path", lambda key: str(framework / "Headers"))
     calls = []
 
@@ -37,6 +38,7 @@ def test_framework_config_uses_target_slice(tmp_path, monkeypatch):
     assert "suppress_build_script_link_lines=true\n" in text
     assert f"cargo:rustc-link-search=framework={framework.parent}\n" in text
     assert "cargo:rustc-link-lib=framework=Python\n" in text
+    assert "ext_suffix=.cpython-313-arm64-iphoneos.so\n" in text
     assert "python3.13" not in text
     assert all(kwargs["check"] for _, kwargs in calls)
     assert calls[0][0][-2:] == ["-verify_arch", "arm64"]
@@ -52,10 +54,22 @@ def test_framework_config_uses_target_slice(tmp_path, monkeypatch):
 
 def test_reject_missing_framework(tmp_path, monkeypatch):
     target(monkeypatch)
-    monkeypatch.setattr(config.sysconfig, "get_config_var", lambda key: None)
+    monkeypatch.setattr(config.sysconfig, "get_config_var", lambda key: (
+        ".cpython-313-arm64-iphoneos.so" if key == "EXT_SUFFIX" else None))
     monkeypatch.setattr(config.sysconfig, "get_path", lambda key: str(tmp_path))
     with pytest.raises(ValueError, match="exactly one"):
         config.write_config(tmp_path / "pyo3.txt")
+
+
+@pytest.mark.parametrize("suffix", [None, "", ".cpython-313-darwin.so",
+                                         ".cpython-313-arm64-iphonesimulator.so"])
+def test_reject_wrong_extension_suffix(tmp_path, monkeypatch, suffix):
+    target(monkeypatch)
+    monkeypatch.setattr(config.sysconfig, "get_config_var", lambda key: suffix)
+    output = tmp_path / "pyo3.txt"
+    with pytest.raises(ValueError, match="extension suffix"):
+        config.write_config(output)
+    assert not output.exists()
 
 
 @pytest.mark.parametrize("platform,multiarch,version", [

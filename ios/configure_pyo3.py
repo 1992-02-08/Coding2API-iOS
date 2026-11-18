@@ -13,6 +13,10 @@ def write_config(output: Path) -> None:
         raise ValueError("PyO3 configuration requires the arm64 iPhoneOS cross interpreter")
     if sys.version_info[:2] != (3, 13):
         raise ValueError("Expected the locked CPython 3.13 target")
+    # Maturin also reads this file and cannot infer an iOS extension suffix.
+    ext_suffix = sysconfig.get_config_var("EXT_SUFFIX")
+    if not isinstance(ext_suffix, str) or not ext_suffix.endswith("-arm64-iphoneos.so"):
+        raise ValueError("Expected the target arm64 iPhoneOS extension suffix")
     candidates = []
     for value in (sysconfig.get_config_var("PYTHONFRAMEWORKPREFIX"),
                   sysconfig.get_config_var("LIBDIR"), sysconfig.get_path("include")):
@@ -31,6 +35,7 @@ def write_config(output: Path) -> None:
         raise ValueError("Python.framework is not an iPhoneOS binary")
     output.write_text(
         "implementation=CPython\nversion=3.13\nshared=true\nabi3=true\n"
+        f"ext_suffix={ext_suffix}\n"
         "pointer_width=64\nsuppress_build_script_link_lines=true\n"
         f"extra_build_script_line=cargo:rustc-link-search=framework={framework.parent}\n"
         "extra_build_script_line=cargo:rustc-link-lib=framework=Python\n")
