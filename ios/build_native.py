@@ -99,10 +99,16 @@ def main():
                 cffi = next(p for p in packages if p["name"] == "cffi")
                 codegen = prepare_crypto_codegen(roots[0], work, cffi["version"])
                 openssl = build_openssl(work)
+                config = work / "pyo3-iphoneos.txt"
+                # The hook runs under the target cross interpreter, after cibuildwheel
+                # provisions its XCFramework. Never query the host Python's sysconfig.
+                env["CIBW_BEFORE_BUILD_IOS"] = (
+                    f'python "{root / "ios/configure_pyo3.py"}" --output "{config}"')
                 env.update(CODING2API_CODEGEN_PYTHON=str(codegen),
                            OPENSSL_DIR=str(openssl), OPENSSL_STATIC="1",
                            OPENSSL_NO_VENDOR="1",
                            CIBW_ENVIRONMENT_IOS=(
+                               f'PYO3_CONFIG_FILE="{config}" '
                                f'CODING2API_CODEGEN_PYTHON="{codegen}" '
                                f'OPENSSL_DIR="{openssl}" OPENSSL_STATIC=1 '
                                'OPENSSL_NO_VENDOR=1 IPHONEOS_DEPLOYMENT_TARGET=16.0'))
