@@ -15,7 +15,7 @@ WebView 上方有返回模式按钮。内嵌服务已经启动后，切换常驻
 
 ## 云端 macOS 构建入口
 
-`.github/workflows/ios.yml` 仅支持手动 `workflow_dispatch`，不因本地文件修改触发。不创建仓库、不发布 Release、不安装设备。须先由用户指定可写仓库和授权推送，再手动执行；`bundle_prefix` 是用户选定的永久反向域名前缀，最终 ID 加 `.coding2api`。
+`.github/workflows/ios.yml` 支持手动 `workflow_dispatch`，也在 main 上该工作流文件变更的推送时启动；其他源码推送不触发 IPA 构建。不创建仓库、不发布 Release、不安装设备。当前默认 `bundle_prefix` 为 `com.github.1992-02-08`，最终 ID 为 `com.github.1992-02-08.coding2api`；手动运行可指定前缀。
 
 流程使用 macOS 15 / 完整 Xcode、CPython 3.13、Node 24、pnpm 10.18.0、Briefcase 0.4.7：
 
