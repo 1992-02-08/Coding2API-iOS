@@ -32,7 +32,7 @@ if len(apps) != 1:
     raise SystemExit('Expected exactly one archived app')
 app = apps[0]
 info = plistlib.loads((app / 'Info.plist').read_bytes())
-subprocess.run(['lipo', '-verify_arch', 'arm64', str(app / info['CFBundleExecutable'])], check=True)
+subprocess.run(['lipo', str(app / info['CFBundleExecutable']), '-verify_arch', 'arm64'], check=True)
 # These checks catch a hollow shell or wrongly staged resources; imports still require a device.
 for pattern in ('**/src/main.py', '**/web/dist/index.html', '**/coding2api/app.py'):
     if not list(app.glob(pattern)):

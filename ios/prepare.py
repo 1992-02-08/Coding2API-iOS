@@ -20,8 +20,8 @@ def prepare():
     root = Path(__file__).resolve().parents[1]
     if (len(args.bundle.split(".")) < 2
             or not args.bundle.isascii()
-            or any(not p or not p[0].isalpha()
-                   or not p.replace("-", "").isalnum() for p in args.bundle.split("."))):
+            or any(not p or not p.replace("-", "").isalnum()
+                   for p in args.bundle.split("."))):
         parser.error("bundle must be a reverse DNS prefix")
     if not args.wheels.is_dir():
         parser.error("wheel directory does not exist")
