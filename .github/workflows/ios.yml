@@ -20,7 +20,31 @@ permissions:
   contents: read
 
 jobs:
+  previous-diagnostics:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Retrieve previous native build evidence
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh run download 44239438034 --name coding2api-ios-44239438034 --dir previous-diagnostics
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          logs = list(Path('previous-diagnostics').rglob('native-build.log'))
+          if len(logs) != 1:
+              raise SystemExit('Expected one previous native log')
+          text = logs[0].read_text(errors='replace')[-16000:]
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('## Previous native build failure\n```text\n' + text + '\n```\n')
+          escaped = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+          print('::warning title=Previous native build log::' + escaped)
+          PY
   build:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: macos-15
     timeout-minutes: 60
     env:
