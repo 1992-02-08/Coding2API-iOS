@@ -54,7 +54,7 @@ jobs:
           pnpm exec tsc --noEmit
           pnpm exec vitest run
           pnpm build
-      - name: Experimental native extension build
+      - name: Experimental native extension build with device library verification
         if: github.event_name == 'push' || inputs.build_native
         run: |
           python -m pip install cibuildwheel==3.4.0

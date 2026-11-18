@@ -43,8 +43,8 @@ def build_openssl(work: Path) -> Path:
                    cwd=source, env=env, check=True)
     subprocess.run(["make", "install_sw"], cwd=source, env=env, check=True)
     for name in ("libssl.a", "libcrypto.a"):
-        subprocess.run(["xcrun", "lipo", "-verify_arch", "arm64",
-                        str(prefix / "lib" / name)], check=True)
+        subprocess.run(["xcrun", "lipo", str(prefix / "lib" / name),
+                        "-verify_arch", "arm64"], check=True)
     return prefix
 
 

@@ -51,6 +51,6 @@ def test_openssl_uses_device_target_and_static_libraries(tmp_path, monkeypatch):
     assert "SDKROOT" not in options["env"]
     assert all(options["check"] for _, options in calls)
     assert [args for args, _ in calls[-2:]] == [
-        ["xcrun", "lipo", "-verify_arch", "arm64", str(prefix / "lib" / name)]
+        ["xcrun", "lipo", str(prefix / "lib" / name), "-verify_arch", "arm64"]
         for name in ("libssl.a", "libcrypto.a")
     ]
