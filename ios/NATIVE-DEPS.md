@@ -21,7 +21,7 @@
 这是可供云端执行收集失败证据的试验入口，**尚未补齐并验证整个构建链**：
 
 1. pydantic-core 使用 maturin（源码要求 >=1.16.0,<2），需要确认其与 cibuildwheel iOS CPython 交叉环境、PyO3 配置实际兼容。Rust 支持目标并不自动证明 Python 扩展能加载。
-2. cryptography 使用 maturin（源码要求 >=1.14.1,<2）并依赖 OpenSSL。须在 Mac 构建目标为 iPhoneOS arm64、最低系统不高于 16.0 的 OpenSSL，配置目标头文件/静态库或正确可打包的动态库。macOS Homebrew OpenSSL 不是合格输入。当前未准备经过核验的 OpenSSL 下载锁、构建配方和链接变量，故很可能在此失败；不提供伪装成功的占位模块。
+2. cryptography 使用 maturin（源码要求 >=1.14.1,<2）并依赖 OpenSSL。首轮云构建确认在 `openssl-sys` 查找 iPhoneOS OpenSSL 时失败。入口现下载并校验固定 OpenSSL 3.5.4（SHA256 写入脚本），使用上游 `ios64-xcrun`、最低 iOS 16.0 构建静态库，校验 arm64，并通过 `CIBW_ENVIRONMENT_IOS` 将 `OPENSSL_DIR` / `OPENSSL_STATIC=1` 传入隔离环境。此修复仍待云端验证；不会使用 macOS Homebrew OpenSSL。
 3. BeeWare mobile-forge 的现代 cryptography 配方也注明未工作，不能用它作为成功依据；旧版本不能直接替换 uv.lock。
 4. `resolve_wheels.py` 在以上编译成功后解析完整 wheel 集合；Toga 传递依赖仍需固化。uv 导出的条件标记还需在真实目标解析时核对，桌面解析结果本身不是完整 iOS 兼容性证明。
 5. 成功 wheel 还须检查 Mach-O 架构、最低系统、依赖 install names，并进入签名 IPA 真机导入测试。cibuildwheel 不运行真机 wheel 测试，模拟器需要另外一套 wheels。
