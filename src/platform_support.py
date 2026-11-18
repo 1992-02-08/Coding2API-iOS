@@ -14,8 +14,8 @@ from __future__ import annotations
 
 import sys
 
-#: 支持的系统（`sys.platform` 前缀）。Linux 与 macOS 均提供 `flock`。
-SUPPORTED_PLATFORMS = ("linux", "darwin")
+#: 支持的系统（`sys.platform` 前缀）。iOS CPython 也提供 fcntl/flock。
+SUPPORTED_PLATFORMS = ("linux", "darwin", "ios")
 
 
 def is_supported_platform(platform: str | None = None) -> bool:
@@ -28,7 +28,7 @@ def unsupported_platform_message(platform: str | None = None) -> str:
     """非支持平台的退出文案：说清原因、替代路径与文档位置。"""
     name = sys.platform if platform is None else platform
     return (
-        f"本平台暂不支持：{name}。单实例锁依赖 flock（仅 Linux / macOS），"
+        f"本平台暂不支持：{name}。单实例锁依赖 flock（仅 Linux / macOS / 实验性 iOS），"
         f"缺失时会让同一 DATA_DIR 的双写保护静默失效。"
         f"Windows 请用 WSL2 或 Docker 部署（见 README「部署注意」）。"
     )

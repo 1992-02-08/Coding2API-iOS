@@ -1,0 +1,80 @@
+name: Experimental local iOS IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      bundle_prefix:
+        description: 'Permanent reverse DNS prefix (final ID adds .coding2api)'
+        required: true
+        type: string
+      build_native:
+        description: 'Attempt experimental locked Rust/OpenSSL iOS cross-build first'
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 60
+    env:
+      BUNDLE_PREFIX: ${{ inputs.bundle_prefix }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.13'
+      - uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115
+        with:
+          version: '10.18.0'
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version: '24'
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+      - name: Backend quality gates (no local .env)
+        run: |
+          test ! -e .env
+          uv sync --frozen
+          uv run ruff check src tests scripts
+          uv run pytest -q --cov=src --cov-report=term --cov-fail-under=100
+          uv run pytest -q ios/tests
+          python -m compileall -q ios
+      - name: Complete upstream Web UI
+        working-directory: web
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm exec tsc --noEmit
+          pnpm exec vitest run
+          pnpm build
+      - name: Experimental native extension build
+        if: inputs.build_native
+        run: |
+          python -m pip install cibuildwheel==3.4.0
+          mkdir -p ios/dist
+          python ios/build_native.py > ios/dist/native-build.log 2>&1
+      - name: Resolve physical-device wheels (missing native wheels are fatal)
+        run: |
+          python -m pip install briefcase==0.4.7
+          python ios/resolve_wheels.py
+      - name: Generate complete Briefcase project
+        run: |
+          python ios/prepare.py --bundle "$BUNDLE_PREFIX" --wheels ios/wheels
+          cd ios/staging
+          briefcase create iOS --no-input
+      - name: Build physical-device archive and unsigned IPA
+        run: bash ios/build-ipa.sh
+      - name: Retain diagnostic evidence and any successful IPA
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coding2api-ios-${{ github.run_id }}
+          path: |
+            ios/dist/
+            ios/wheels/requirements.txt
+            ios/wheels/SHA256.json
+          if-no-files-found: warn
+          retention-days: 7

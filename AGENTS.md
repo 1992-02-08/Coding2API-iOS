@@ -1,5 +1,9 @@
 # coding2api 项目级约束
 
+## 本工作区的实验性 iOS 移植
+
+上游源码已导入；iOS 宿主与准备脚本在 `ios/`，步骤及未验证项见 `ios/README.md`。本机没有 Python、Node、pnpm、uv、Briefcase、Xcode，因此尚未通过构建或测试，也未产出 IPA。入口现有内嵌 :8000 与连接本机常驻 :8001；数据库独立，常驻不自动部署。云端手动流程在 `.github/workflows/ios.yml`；Mac 依次跑原版质量门槛、`uv run pytest -q ios/tests`、前端完整构建、`ios/build_native.py`（试验）、`ios/resolve_wheels.py`、`ios/prepare.py`、Briefcase create 和 `bash ios/build-ipa.sh`。真机无签名归档不等于可安装发行；详细限制见 iOS 文档。不要把源码准备称为已完成可运行移植。不得未经用户授权创建仓库、推送、执行云构建或部署系统服务；IPA 由用户自行安装。
+
 全局约束见 `~/.claude/CLAUDE.md`（opencode 经 `~/.config/opencode/AGENTS.md` 软链读取）；本文件更具体，冲突以本文件为准。
 
 ## 质量门槛（提交前必须全部通过）

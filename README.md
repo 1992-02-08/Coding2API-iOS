@@ -10,6 +10,10 @@
 > [!WARNING]
 > 逆向接口，仅供学习研究，未做安全审计；公网部署需反向代理 + 鉴权 + IP 白名单。
 
+## 实验性 iOS 移植
+
+已添加完整 Python 后端、Web 管理台和两种本地模式入口：App 内嵌 8000，以及连接本机越狱常驻服务 8001；账号和数据库独立。手动 macOS 云端构建流程与依赖交叉编译试验见 [ios/README.md](ios/README.md)。**尚未生成 IPA，也未验证 iOS 可运行性或锁屏常驻**；缺失的原生 wheel、签名和独立常驻 Python 运行时仍是阻碍。IPA 由用户自行安装，系统服务未部署。
+
 ## 特性
 
 - **OpenAI 兼容出口**：`/v1/chat/completions`（流式 / 非流式）、`/v1/responses`（Codex CLI）、`/v1/messages`（Claude Code）、`/v1/models`（含单模型查询）、`/v1/user/balance`。

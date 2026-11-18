@@ -1,3 +1,11 @@
+# Experimental iOS build products
+ios/staging/
+ios/wheels/
+ios/native-wheels/
+ios/dist/
+*.ipa
+*.xcarchive
+
 # Python
 __pycache__/
 *.py[cod]

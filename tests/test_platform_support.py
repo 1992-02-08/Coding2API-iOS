@@ -9,7 +9,7 @@ from src.config import Settings
 from tests.helpers.constants import SECRET
 
 
-@pytest.mark.parametrize("platform", ["linux", "linux2", "darwin"])
+@pytest.mark.parametrize("platform", ["linux", "linux2", "darwin", "ios", "ios-16.6"])
 def test_supported_platforms(platform):
     assert platform_support.is_supported_platform(platform) is True
     platform_support.require_supported_platform(platform)   # 不抛即通过

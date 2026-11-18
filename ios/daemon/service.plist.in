@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>Label</key><string>coding2api.service</string>
+  <key>ProgramArguments</key><array>
+    <string>@PREFIX@/usr/libexec/coding2api/python3</string>
+    <string>-m</string><string>ios.daemon.service</string>
+  </array>
+  <key>WorkingDirectory</key><string>@PREFIX@/usr/share/coding2api</string>
+  <key>UserName</key><string>mobile</string>
+  <key>GroupName</key><string>mobile</string>
+  <key>EnvironmentVariables</key><dict>
+    <key>CODING2API_SERVICE_DATA</key><string>@SERVICE_DATA_REAL@</string>
+    <key>PYTHONUNBUFFERED</key><string>1</string>
+  </dict>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><dict><key>SuccessfulExit</key><false/></dict>
+  <key>ThrottleInterval</key><integer>30</integer>
+  <key>ExitTimeOut</key><integer>45</integer>
+  <key>ProcessType</key><string>Background</string>
+</dict></plist>
